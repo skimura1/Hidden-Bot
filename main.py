@@ -4,6 +4,7 @@ import json
 import requests
 import asyncio
 import youtube_dl
+import random
 
 from discord.ext import commands
 
@@ -28,6 +29,19 @@ ytdl_format_options = {
 ffmpeg_options = {
     'options': '-vn'
 }
+
+lonelysong_array = ['https://www.youtube.com/watch?v=6EEW-9NDM5k',
+                    'https://www.youtube.com/watch?v=Fd-elEnkInw',
+                    'https://www.youtube.com/watch?v=_qaVLKwBCR4',
+                    'https://www.youtube.com/watch?v=0LtHw4EWxjg',
+                    'https://www.youtube.com/watch?v=GdoNGNe5CSg',
+                    'https://www.youtube.com/watch?v=ZmDBbnmKpqQ',
+                    'https://www.youtube.com/watch?v=BzYnNdJhZQw',
+                    'https://www.youtube.com/watch?v=1-1TGNmQqZA',
+                    'https://www.youtube.com/watch?v=WCyMRdVocx0',
+                    'https://www.youtube.com/watch?v=VmH2ap1n8N8',
+                    'https://www.youtube.com/watch?v=IlwlCdrQ0Cs',
+                    'https://www.youtube.com/watch?v=LfgsldsXoio']
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -65,13 +79,13 @@ class testCommands(commands.Cog):
     self.voice_states = {}
 
   @bot.command(pass_context=True)
-  async def add(ctx, left: int, right: int):
+  async def add(self, ctx, left: int, right: int):
     """add two numbers"""
 
     await ctx.send("{} + {} = {}".format(left, right, left + right))
 
   @bot.command(pass_context=True)
-  async def advice(ctx):
+  async def advice(self, ctx):
     """sends a random advice from api"""
 
     response = requests.get("https://api.adviceslip.com/advice")
@@ -80,7 +94,7 @@ class testCommands(commands.Cog):
     await ctx.send(quote)
   
   @bot.command(pass_context=True)
-  async def coinflip(ctx):
+  async def coinflip(self, ctx):
     """flips a coin and send heads or tails"""
 
     response = requests.get("http://flipacoinapi.com/json")
@@ -89,7 +103,7 @@ class testCommands(commands.Cog):
     await ctx.send(quote)
   
   @bot.command(pass_context=True)
-  async def join(ctx):
+  async def join(self, ctx):
     """Joins a voice channel that the user"""
 
     if not ctx.author.voice:
@@ -98,7 +112,7 @@ class testCommands(commands.Cog):
     await destination.connect()
   
   @bot.command(pass_context=True)
-  async def disconnect(ctx):
+  async def disconnect(self, ctx):
     """Disconnect from voice channel"""
 
     if not ctx.author.voice:
@@ -108,7 +122,7 @@ class testCommands(commands.Cog):
     await server.disconnect()
   
   @bot.command(pass_context=True)
-  async def play(ctx, *, url):
+  async def play(self, ctx, *, url):
     """Joins and plays Youtube Audio in Voice Channel"""
 
     if not ctx.author.voice:
@@ -122,25 +136,27 @@ class testCommands(commands.Cog):
 
       await ctx.send('Now playing: {}'.format(player.title))
   
-  async def stop(ctx):
+  async def stop(self, ctx):
     """Stops and disconnects the bot from voice"""
     await ctx.voice_client.disconnect()
   
   @bot.command(pass_context=True)
-  async def lonely(ctx):
+  async def lonely(self, ctx):
     """Joins and plays Sad Song from SoundCloud"""
 
+    random.seed()
+    rand_num = random.randint(0, 100) % len(lonelysong_array)
     if not ctx.author.voice:
       raise VoiceError("You are not connected to a voice channel")
-    destination = ctx.author.voice.channel
-    await destination.connect()
-
+    if len(ctx.bot.voice_clients) == 0:
+      destination = ctx.author.voice.channel
+      await destination.connect() 
     async with ctx.typing():
-      player = await YTDLSource.from_url("https://www.youtube.com/watch?v=6EEW-9NDM5k" , stream=True)
+      lonelyarr = lonelysong_array[rand_num]
+      await ctx.send('Playing lonely song')
+      player = await YTDLSource.from_url(lonelyarr , stream=True)
       ctx.voice_client.play(player, after=lambda e: ctx.send('Player error: %s' % e) if e else None)
-      await ctx.send('This song will cheer you up')
       await ctx.send('Now playing: {}'.format(player.title))
-
 @bot.event
 async def on_ready():
   print('Logged in as {0.user}'.format(bot))
